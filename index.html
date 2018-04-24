@@ -38,7 +38,7 @@
 
       $('form').submit(function(){
         message = $('#m').val();
-        socket.emit('chat message', {
+        socket.emit('chat', {
           'message' : message,
           'user' : user
         });
@@ -47,7 +47,7 @@
         return false;
       });
 
-      socket.on('chat message', function(msg){
+      socket.on('chat', function(msg){
         $('#messages').append($('<li>').text(msg));
       });
       socket.on('typing', function(msg){

@@ -12,8 +12,8 @@ io.on('connection', function(socket){
     io.emit('chat message', "User is disconnected");
   }); */
 
-  socket.on('chat message', function(msg){
-    socket.broadcast.emit('chat message', `${msg.user} : ${msg.message}`);
+  socket.on('chat', function(msg){
+    socket.broadcast.emit('chat', `${msg.user} : ${msg.message}`);
   });
 
   socket.on('typing', function(msg){
