@@ -7,6 +7,8 @@ function setup(args, ctx) {
   ctx.audioElement = document.getElementById("audio");
   // Set download link for the audio download button
   ctx.downloadElement = document.getElementById("downloadLink");
+
+  document.getElementById("recording").textContent = "not recording";
   
   startListening(ctx.mic, ctx);
 };
@@ -15,8 +17,12 @@ function update(args, ctx) {
 };
 
 function cleanup(args, ctx) {
+
+  document.removeEventListener('keydown', logKeyPressed, true);
+  document.removeEventListener('keyup', logKeyPressed, true);
+
   ctx.mic.cleanup();
-  releaseAudioURL(ctx.audioElement);
+  //releaseAudioURL(ctx.audioElement);
   
   stopListening(ctx);
 };
@@ -142,24 +148,48 @@ class Microphone {
 }
 
 function startListening(mic, ctx) {
+
+  document.myparam = 'toto';
+
+  document.addEventListener('keydown', logKeyPressed, true);
+
+  document.addEventListener('keyup', logKeyPressed, true);
+
+
   // Single button for recording using the mic icon
-  if (document.getElementById("recordMic")) {
+  /* if (document.getElementById("recordMic")) {
     ctx.recordMicButton = document.getElementById("recordMic");
 
     ctx.recordMicButton.addEventListener("mousedown", (e) => { startRecordingWithButton(e.target, "#4a90e2", ctx.audioElement, ctx.mic, ctx); });
     ctx.recordMicButton.addEventListener("mouseup", (e) => { stopRecordingWithButton(e.target, "white", ctx.audioElement, ctx.mic); });
   }
 
-  window.addEventListener("micRecordingReady", (e) => { setAudioSource(ctx.audioElement, ctx.downloadElement, e.detail) });
+  window.addEventListener("micRecordingReady", (e) => { setAudioSource(ctx.audioElement, ctx.downloadElement, e.detail) }); */
 }
 
 function stopListening(ctx) {
-  if (ctx.recordMicButton) {
+ /*  if (ctx.recordMicButton) {
     ctx.recordMicButton.removeEventListener("mousedown", startRecordingWithButton);
     ctx.recordMicButton.removeEventListener("mouseup", stopRecordingWithButton);
   }
 
-  window.removeEventListener("micRecordingReady", setAudioSource);
+  window.removeEventListener("micRecordingReady", setAudioSource); */
+}
+
+function mouse(event) {
+  console.log(event);
+}
+
+function logKeyPressed(event) {
+	console.log(event);
+  console.log(event.target.ownerDocument.myparam);
+  if (event.type === "keydown") {
+    document.getElementById("recording").textContent = "recording...";
+  }
+  if (event.type === "keyup") {
+    document.getElementById("recording").textContent = "not recording";
+  }
+  console.log(`Event : ${event.type}\nKey : ${event.code}`);
 }
 
 function startRecordingWithButton(micButton, buttonColor, audioElement, mic, ctx) {

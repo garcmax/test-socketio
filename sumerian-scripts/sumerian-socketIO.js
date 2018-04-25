@@ -8,8 +8,8 @@
 // Called when play mode starts.
 //
 function setup(args, ctx) {
-    ctx.socket = io("https://sumerian-maxou.ddns.net");
-	ctx.socket.on('chat', function(msg){
+    ctx.socket = io('https://poc.viseo.io', {path: '/demo-02/socket.io'});
+	ctx.socket.on('sumerian', function(msg){
         console.log(msg);
     });
 }
