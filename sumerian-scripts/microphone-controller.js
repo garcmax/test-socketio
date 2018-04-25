@@ -6,8 +6,8 @@ function setup(args, ctx) {
   
   startListening(ctx.mic, ctx);
 
-  ctx.socket = io('https://sumerian-maxou.ddns.net');
-	ctx.socket.on('chat', function(msg){
+  ctx.socket = io('https://poc.viseo.io', {path: '/demo-02/socket.io'});
+	ctx.socket.on('test', function(msg){
         console.log(msg);
     });
 };
@@ -166,7 +166,6 @@ function startRecordingWithButton(event, mic, ctx) {
     ctx.allowed = !event.repeat;
   }
   if (ctx.allowed) {
-    console.log("une seule fois");
     mic.startRecording();
     ctx.isBufferProcessed = false;
   }
@@ -180,7 +179,7 @@ function stopRecordingWithButton(mic, ctx) {
 function setAudioSource(blobData, ctx) {
   if (blobData) {
     console.log(blobData);
-    ctx.socket.emit('record', blobData);
+    ctx.socket.emit('sumerian', blobData);
   } else {
     throw "no blob";
   }
