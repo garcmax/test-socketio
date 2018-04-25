@@ -2,15 +2,14 @@
 
 function setup(args, ctx) {
   ctx.mic = new Microphone();
-
-  // <audio> element used for audio playback
-  ctx.audioElement = document.getElementById("audio");
-  // Set download link for the audio download button
-  ctx.downloadElement = document.getElementById("downloadLink");
-
-  document.getElementById("recording").textContent = "not recording";
+  ctx.recordingButton = document.getElementById("recording");
   
   startListening(ctx.mic, ctx);
+
+  ctx.socket = io('https://sumerian-maxou.ddns.net');
+	ctx.socket.on('chat', function(msg){
+        console.log(msg);
+    });
 };
 
 function update(args, ctx) {
@@ -18,12 +17,8 @@ function update(args, ctx) {
 
 function cleanup(args, ctx) {
 
-  document.removeEventListener('keydown', logKeyPressed, true);
-  document.removeEventListener('keyup', logKeyPressed, true);
-
   ctx.mic.cleanup();
-  //releaseAudioURL(ctx.audioElement);
-  
+  ctx.socket.close();
   stopListening(ctx);
 };
 
@@ -149,90 +144,44 @@ class Microphone {
 
 function startListening(mic, ctx) {
 
-  document.myparam = 'toto';
+  //document.myparam = 'toto';
 
-  document.addEventListener('keydown', logKeyPressed, true);
+  ctx.recordingButton.addEventListener('keydown', (e) => { startRecordingWithButton(e, ctx.mic, ctx); });
 
-  document.addEventListener('keyup', logKeyPressed, true);
+  ctx.recordingButton.addEventListener('keyup', (e) => { stopRecordingWithButton(ctx.mic, ctx); });
 
+  window.addEventListener("micRecordingReady", (e) => { setAudioSource(e.detail, ctx) });
 
-  // Single button for recording using the mic icon
-  /* if (document.getElementById("recordMic")) {
-    ctx.recordMicButton = document.getElementById("recordMic");
-
-    ctx.recordMicButton.addEventListener("mousedown", (e) => { startRecordingWithButton(e.target, "#4a90e2", ctx.audioElement, ctx.mic, ctx); });
-    ctx.recordMicButton.addEventListener("mouseup", (e) => { stopRecordingWithButton(e.target, "white", ctx.audioElement, ctx.mic); });
-  }
-
-  window.addEventListener("micRecordingReady", (e) => { setAudioSource(ctx.audioElement, ctx.downloadElement, e.detail) }); */
 }
 
 function stopListening(ctx) {
- /*  if (ctx.recordMicButton) {
-    ctx.recordMicButton.removeEventListener("mousedown", startRecordingWithButton);
-    ctx.recordMicButton.removeEventListener("mouseup", stopRecordingWithButton);
-  }
+  ctx.recordingButton.removeEventListener('keydown', startRecordingWithButton);
+  ctx.recordingButton.removeEventListener('keyup', stopRecordingWithButton);
 
-  window.removeEventListener("micRecordingReady", setAudioSource); */
+  window.removeEventListener("micRecordingReady", setAudioSource);
 }
 
-function mouse(event) {
-  console.log(event);
-}
-
-function logKeyPressed(event) {
-	console.log(event);
-  console.log(event.target.ownerDocument.myparam);
-  if (event.type === "keydown") {
-    document.getElementById("recording").textContent = "recording...";
+function startRecordingWithButton(event, mic, ctx) {
+  if (event.repeat != undefined) {
+    ctx.allowed = !event.repeat;
   }
-  if (event.type === "keyup") {
-    document.getElementById("recording").textContent = "not recording";
-  }
-  console.log(`Event : ${event.type}\nKey : ${event.code}`);
-}
-
-function startRecordingWithButton(micButton, buttonColor, audioElement, mic, ctx) {
-  mic.startRecording();
-  ctx.isBufferProcessed = false;
-
-  releaseAudioURL(audioElement);
-
-  if (micButton) {
-    micButton.style.background = buttonColor;
+  if (ctx.allowed) {
+    console.log("une seule fois");
+    mic.startRecording();
+    ctx.isBufferProcessed = false;
   }
 }
 
-function stopRecordingWithButton(micButton, buttonColor, audioElement, mic) {
-  mic.stopRecording();  
-
-  if (micButton) {
-    micButton.style.background = buttonColor;
-  }
+function stopRecordingWithButton(mic, ctx) {
+  mic.stopRecording();
+  ctx.allowed = true;
 }
 
-function setAudioSource(audioElement, downloadElement, blobData) {
+function setAudioSource(blobData, ctx) {
   if (blobData) {
-    audioElement.src = URL.createObjectURL(blobData);
-
-    setDownloadLink(downloadElement, audioElement.src);
+    console.log(blobData);
+    ctx.socket.emit('record', blobData);
   } else {
-    throw "Could not set the audio source and download link with the mic recording";
-  }
-}
-
-function setDownloadLink(downloadElement, audioSource) {
-  if (!downloadElement) return;
-
-  if (audioSource) {
-      downloadElement.href = audioSource;
-  } else {
-    console.log("No audio source available to download");
-  }
-}
-
-function releaseAudioURL(audioElement) {
-  if (audioElement.src) {
-    window.URL.revokeObjectURL(audioElement.src);
+    throw "no blob";
   }
 }

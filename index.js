@@ -1,4 +1,4 @@
-var app = require('express')();
+/* var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
@@ -7,10 +7,10 @@ app.get('/', function(req, res){
 });
 
 io.on('connection', function(socket){
- /*  io.emit('chat message', "User is connected");
+  io.emit('chat message', "User is connected");
   socket.on('disconnect', function(){
     io.emit('chat message', "User is disconnected");
-  }); */
+  }); 
 
   socket.on('chat', function(msg){
     socket.broadcast.emit('chat', `${msg.user} : ${msg.message}`);
@@ -27,4 +27,9 @@ io.on('connection', function(socket){
 
 http.listen(3000, function(){
   console.log('listening on *:3000');
+}); */
+
+var socket = require('socket.io-client')('https://poc.viseo.io', {path: '/demo-02/socket.io'});
+socket.on('sumerian', function(msg){
+  console.log(msg);
 });
