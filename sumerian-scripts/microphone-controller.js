@@ -3,24 +3,46 @@
 function setup(args, ctx) {
   ctx.mic = new Microphone();
   ctx.recordingButton = document.getElementById("recording");
+  ctx.speakButton = document.getElementById("speak");
   
   startListening(ctx.mic, ctx);
+  startSpeaking(ctx);
+  setupSocketIOEvent(ctx);
+  setupSpeechComponent(ctx);
+}
 
+function setupSocketIOEvent(ctx) {
   ctx.socket = io('https://poc.viseo.io', {path: '/demo-02/socket.io'});
 	ctx.socket.on('test', function(msg){
         console.log(msg);
+        var speech = ctx.speechComponent.speeches[0];
+        speech.updateConfig({
+          body : msg
+        });
+        speech.play();
     });
-};
+}
+
+function setupSpeechComponent(ctx) {
+  sumerian.SystemBus.addListener('aws.sdkReady', () => {
+    ctx.speechComponent = ctx.entity.getComponent("speechComponent");
+    var speech = ctx.speechComponent.speeches[0];
+    speech.updateConfig({
+      body : "<speak>What a wonderful day Max !</speak>"
+    });
+  }, true);
+}
 
 function update(args, ctx) {
-};
+}
 
 function cleanup(args, ctx) {
 
   ctx.mic.cleanup();
   ctx.socket.close();
   stopListening(ctx);
-};
+  stopSpeaking(ctx);
+}
 
 class Microphone {
   constructor(fileType = "audio/mp3") {
@@ -142,15 +164,27 @@ class Microphone {
   }
 }
 
-function startListening(mic, ctx) {
+function startSpeaking(ctx) {
+  ctx.speakButton.addEventListener('mousedown', (e) => { speak(e, ctx); });
+}
 
-  //document.myparam = 'toto';
+function stopSpeaking(ctx) {
+  ctx.speakButton.removeEventListener('mousedown', speak);
+}
+
+function speak(event, ctx) {
+  if (event && event.type === "mousedown") {
+    ctx.speechComponent.speeches[0].play();
+  }
+}
+
+function startListening(mic, ctx) {
 
   ctx.recordingButton.addEventListener('keydown', (e) => { startRecordingWithButton(e, ctx.mic, ctx); });
 
   ctx.recordingButton.addEventListener('keyup', (e) => { stopRecordingWithButton(ctx.mic, ctx); });
 
-  window.addEventListener("micRecordingReady", (e) => { setAudioSource(e.detail, ctx) });
+  window.addEventListener("micRecordingReady", (e) => { setAudioSource(e.detail, ctx); });
 
 }
 
@@ -167,6 +201,7 @@ function startRecordingWithButton(event, mic, ctx) {
   }
   if (ctx.allowed) {
     mic.startRecording();
+    console.log("recording...");
     ctx.isBufferProcessed = false;
   }
 }
