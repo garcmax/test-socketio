@@ -2,11 +2,8 @@
 
 function setup(args, ctx) {
   ctx.mic = new Microphone();
-  ctx.recordingButton = document.getElementById("recording");
-  ctx.speakButton = document.getElementById("speak");
-  
+	
   startListening(ctx.mic, ctx);
-  startSpeaking(ctx);
   setupSocketIOEvent(ctx);
   setupSpeechComponent(ctx);
 }
@@ -18,22 +15,16 @@ function setupSocketIOEvent(ctx) {
         var speech = ctx.speechComponent.speeches[0];
         speech.updateConfig({
           body : msg
-        });
+        });        
         speech.play();
+        sumerian.SystemBus.emit('animation');
     });
 }
 
 function setupSpeechComponent(ctx) {
   sumerian.SystemBus.addListener('aws.sdkReady', () => {
     ctx.speechComponent = ctx.entity.getComponent("speechComponent");
-    var speech = ctx.speechComponent.speeches[0];
-    speech.updateConfig({
-      body : "<speak>What a wonderful day Max !</speak>"
-    });
   }, true);
-}
-
-function update(args, ctx) {
 }
 
 function cleanup(args, ctx) {
@@ -41,7 +32,8 @@ function cleanup(args, ctx) {
   ctx.mic.cleanup();
   ctx.socket.close();
   stopListening(ctx);
-  stopSpeaking(ctx);
+	
+	sumerian.SystemBus.removeAllOnChannel('aws.sdkReady');
 }
 
 class Microphone {
@@ -164,33 +156,19 @@ class Microphone {
   }
 }
 
-function startSpeaking(ctx) {
-  ctx.speakButton.addEventListener('mousedown', (e) => { speak(e, ctx); });
-}
-
-function stopSpeaking(ctx) {
-  ctx.speakButton.removeEventListener('mousedown', speak);
-}
-
-function speak(event, ctx) {
-  if (event && event.type === "mousedown") {
-    ctx.speechComponent.speeches[0].play();
-  }
-}
-
 function startListening(mic, ctx) {
 
-  ctx.recordingButton.addEventListener('keydown', (e) => { startRecordingWithButton(e, ctx.mic, ctx); });
+  window.addEventListener('keydown', (e) => { startRecordingWithButton(e, ctx.mic, ctx); });
 
-  ctx.recordingButton.addEventListener('keyup', (e) => { stopRecordingWithButton(ctx.mic, ctx); });
+  window.addEventListener('keyup', (e) => { stopRecordingWithButton(ctx.mic, ctx); });
 
   window.addEventListener("micRecordingReady", (e) => { setAudioSource(e.detail, ctx); });
 
 }
 
 function stopListening(ctx) {
-  ctx.recordingButton.removeEventListener('keydown', startRecordingWithButton);
-  ctx.recordingButton.removeEventListener('keyup', stopRecordingWithButton);
+  window.removeEventListener('keydown', startRecordingWithButton);
+  window.removeEventListener('keyup', stopRecordingWithButton);
 
   window.removeEventListener("micRecordingReady", setAudioSource);
 }
