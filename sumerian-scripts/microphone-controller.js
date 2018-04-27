@@ -1,9 +1,10 @@
 'use strict';
 
+var context; 
 function setup(args, ctx) {
   ctx.mic = new Microphone();
-	
-  startListening(ctx.mic, ctx);
+  context = ctx;
+  startListening();
   setupSocketIOEvent(ctx);
   setupSpeechComponent(ctx);
 }
@@ -31,9 +32,9 @@ function cleanup(args, ctx) {
 
   ctx.mic.cleanup();
   ctx.socket.close();
-  stopListening(ctx);
+  stopListening();
 	
-	sumerian.SystemBus.removeAllOnChannel('aws.sdkReady');
+  sumerian.SystemBus.removeAllOnChannel('aws.sdkReady');
 }
 
 class Microphone {
@@ -156,43 +157,39 @@ class Microphone {
   }
 }
 
-function startListening(mic, ctx) {
-
-  window.addEventListener('keydown', (e) => { startRecordingWithButton(e, ctx.mic, ctx); });
-
-  window.addEventListener('keyup', (e) => { stopRecordingWithButton(ctx.mic, ctx); });
-
-  window.addEventListener("micRecordingReady", (e) => { setAudioSource(e.detail, ctx); });
-
+function startListening() {
+  window.addEventListener('keydown', startRecordingWithButton);
+  window.addEventListener('keyup', stopRecordingWithButton);
+  window.addEventListener("micRecordingReady", setAudioSource);
 }
 
-function stopListening(ctx) {
+function stopListening() {
   window.removeEventListener('keydown', startRecordingWithButton);
   window.removeEventListener('keyup', stopRecordingWithButton);
-
   window.removeEventListener("micRecordingReady", setAudioSource);
 }
 
-function startRecordingWithButton(event, mic, ctx) {
+function startRecordingWithButton(event) {
   if (event.repeat != undefined) {
-    ctx.allowed = !event.repeat;
+    context.allowed = !event.repeat;
   }
-  if (ctx.allowed) {
-    mic.startRecording();
+  if (context.allowed) {
+    context.mic.startRecording();
     console.log("recording...");
-    ctx.isBufferProcessed = false;
+    context.isBufferProcessed = false;
   }
 }
 
-function stopRecordingWithButton(mic, ctx) {
-  mic.stopRecording();
-  ctx.allowed = true;
+function stopRecordingWithButton() {
+  context.mic.stopRecording();
+  context.allowed = true;
 }
 
-function setAudioSource(blobData, ctx) {
+function setAudioSource(event) {
+  var blobData = event.detail;
   if (blobData) {
     console.log(blobData);
-    ctx.socket.emit('sumerian', blobData);
+    context.socket.emit('sumerian', blobData);
   } else {
     throw "no blob";
   }
