@@ -10,14 +10,14 @@ function setup(args, ctx) {
 
 function setupSocketIOEvent(ctx) {
   ctx.socket = io('https://poc.viseo.io', {path: '/demo-02/socket.io'});
-	ctx.socket.on('test', function(msg){
-        console.log(msg);
+	ctx.socket.on('test', function(data){
+        console.log(data);
         var speech = ctx.speechComponent.speeches[0];
         speech.updateConfig({
-          body : msg
+          body : data.text
         });        
         speech.play();
-        sumerian.SystemBus.emit('animation');
+        sumerian.SystemBus.emit(data.animation);
     });
 }
 
