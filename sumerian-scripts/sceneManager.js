@@ -1,6 +1,6 @@
 'use strict';
 
-var context; 
+var context;
 function setup(args, ctx) {
   ctx.mic = new Microphone();
   context = ctx;
@@ -10,16 +10,16 @@ function setup(args, ctx) {
 }
 
 function setupSocketIOEvent(ctx) {
-  ctx.socket = io('https://poc.viseo.io', {path: '/demo-02/socket.io'});
-	ctx.socket.on('test', function(data){
-        console.log(data);
-        var speech = ctx.speechComponent.speeches[0];
-        speech.updateConfig({
-          body : data.text
-        });        
-        speech.play();
-        sumerian.SystemBus.emit(data.animation);
+  ctx.socket = io('https://bot.aws.viseo.io/', { path: '/socket.io' });
+  ctx.socket.on('test', function (data) {
+    console.log(data);
+    var speech = ctx.speechComponent.speeches[0];
+    speech.updateConfig({
+      body: data.text
     });
+    speech.play();
+    sumerian.SystemBus.emit(data.animation);
+  });
 }
 
 function setupSpeechComponent(ctx) {
@@ -33,7 +33,7 @@ function cleanup(args, ctx) {
   ctx.mic.cleanup();
   ctx.socket.close();
   stopListening();
-	
+
   sumerian.SystemBus.removeAllOnChannel('aws.sdkReady');
 }
 
@@ -45,14 +45,14 @@ class Microphone {
     // PCM format x-l16 is one of the audio formats supported by Amazon Lex
     // See https://docs.aws.amazon.com/lex/latest/dg/API_runtime_PostContent.html
     this._audioType = fileType;
-    
+
     this._audioContext = new AudioContext();
     this._recorder = null;
     this._fileReader = new FileReader();
 
     this._recordedBlob = [];
     this._audioBlob = null;
-   
+
     this._audioBuffer = [];
     this._bufferReady = false;
 
@@ -62,7 +62,7 @@ class Microphone {
   get audioBlob() {
     return this._audioBlob;
   }
-  
+
   get audioBuffer() {
     return this._audioBuffer;
   }
@@ -74,7 +74,7 @@ class Microphone {
   _setup() {
     // Get access to microphone
     if (navigator.mediaDevices) {
-      navigator.mediaDevices.getUserMedia({audio: true}).then((stream) => {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
         this._recorder = new MediaRecorder(stream);
 
         this._recorder.ondataavailable = (e) => {
@@ -95,14 +95,14 @@ class Microphone {
             this._convertBlobToBuffer(blob);
           })
         }
-      }).catch ((e) => {
+      }).catch((e) => {
         throw "Microphone: " + e.name + ". " + e.message;
       })
     } else {
       throw "MediaDevices are not supported in this browser";
     }
   }
-  
+
   // Event fired when the audio blob is ready
   _onBlobReady(blob) {
     const blobReady = new CustomEvent("micRecordingReady", { detail: blob });
@@ -111,7 +111,7 @@ class Microphone {
 
   _createAudioBlob() {
     return new Promise((resolve, reject) => {
-      this._audioBlob = new Blob(this._recordedBlob, {type: this._audioType});
+      this._audioBlob = new Blob(this._recordedBlob, { type: this._audioType });
       resolve(this._audioBlob);
     })
   }
@@ -123,7 +123,7 @@ class Microphone {
       this._audioContext.decodeAudioData(this._fileReader.result).then((decodedData) => {
         this._audioBuffer = decodedData.getChannelData(0);
         this._bufferReady = true;
-      }).catch((e) => { 
+      }).catch((e) => {
         throw "Could not decode audio data: " + e.name + ". " + e.message;
       });
     }
@@ -131,14 +131,14 @@ class Microphone {
 
   startRecording() {
     this._bufferReady = false;
-    
+
     if (this._recorder && this._recorder.state !== "recording") {
       this._recorder.start();
     } else {
       throw "Recording could not start because recorder does not exist or is already being used.";
     }
   }
-  
+
   stopRecording() {
     if (this._recorder && this._recorder.state === "recording") {
       this._recorder.stop();
@@ -174,14 +174,21 @@ function startRecordingWithButton(event) {
     context.allowed = !event.repeat;
   }
   if (context.allowed) {
-    context.mic.startRecording();
-    console.log("recording...");
-    context.isBufferProcessed = false;
+    if (event.keyCode == 32) {
+      context.mic.startRecording();
+      console.log("recording...");
+      context.isBufferProcessed = false;
+    } else if (event.keyCode == 70) {
+      console.log("f");
+      sumerian.SystemBus.emit("triggerGesture");
+    }
   }
 }
 
-function stopRecordingWithButton() {
-  context.mic.stopRecording();
+function stopRecordingWithButton(event) {
+  if (event.keyCode == 32) {
+    context.mic.stopRecording();
+  }
   context.allowed = true;
 }
 
